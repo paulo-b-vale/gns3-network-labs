@@ -1,0 +1,63 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: radius-mysql
+    hostname: radius-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass-lab-2026
+      MYSQL_DATABASE: radius
+      MYSQL_USER: radius
+      MYSQL_PASSWORD: radiuspass-lab-2026
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./mysql/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      radiusnet:
+        ipv4_address: 172.28.0.20
+    restart: unless-stopped
+
+  freeradius:
+    image: freeradius/freeradius-server:3.2.5
+    container_name: freeradius
+    hostname: freeradius
+    depends_on:
+      - mysql
+    ports:
+      - "1812:1812/udp"
+      - "1813:1813/udp"
+      - "3799:3799/udp"
+    volumes:
+      - ./freeradius/raddb:/etc/freeradius
+    networks:
+      radiusnet:
+        ipv4_address: 172.28.0.10
+    command: ["freeradius", "-X"]
+    restart: unless-stopped
+
+  freeradius-backup:
+    image: freeradius/freeradius-server:3.2.5
+    container_name: freeradius-backup
+    hostname: freeradius-backup
+    depends_on:
+      - mysql
+    ports:
+      - "11812:1812/udp"
+      - "11813:1813/udp"
+      - "13799:3799/udp"
+    volumes:
+      - ./freeradius/raddb:/etc/freeradius
+    networks:
+      radiusnet:
+        ipv4_address: 172.28.0.11
+    command: ["freeradius", "-X"]
+    restart: unless-stopped
+
+networks:
+  radiusnet:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/24
+
+volumes:
+  mysql-data:

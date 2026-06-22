@@ -1,0 +1,97 @@
+sql {
+    driver = "rlm_sql_mysql"
+    dialect = "mysql"
+
+    server = "172.28.0.20"
+    port = 3306
+    login = "radius"
+    password = "radiuspass-lab-2026"
+    radius_db = "radius"
+
+    acct_table1 = "radacct"
+    acct_table2 = "radacct"
+    postauth_table = "radpostauth"
+
+    accounting {
+        reference = "%{tolower:type.%{Acct-Status-Type}.query}"
+
+        type {
+            start {
+                query = "\
+                    INSERT INTO ${....acct_table1} \
+                        (acctsessionid, acctuniqueid, username, groupname, \
+                         realm, nasipaddress, nasportid, nasporttype, \
+                         acctstarttime, acctupdatetime, \
+                         acctauthentic, connectinfo_start, calledstationid, \
+                         callingstationid, servicetype, framedprotocol, framedipaddress) \
+                    VALUES \
+                        ('%{Acct-Session-Id}', '%{md5:%{NAS-IP-Address}-%{Acct-Session-Id}-%{SQL-User-Name}}', '%{SQL-User-Name}', '%{Group-Name}', \
+                         '%{Realm}', '%{NAS-IP-Address}', '%{NAS-Port}', '%{NAS-Port-Type}', \
+                         FROM_UNIXTIME(%l), FROM_UNIXTIME(%l), \
+                         '%{Acct-Authentic}', '%{Connect-Info}', '%{Called-Station-Id}', \
+                         '%{Calling-Station-Id}', '%{Service-Type}', '%{Framed-Protocol}', '%{Framed-IP-Address}')"
+            }
+
+            interim-update {
+                query = "\
+                    UPDATE ${....acct_table2} SET \
+                        acctupdatetime = FROM_UNIXTIME(%l), \
+                        acctsessiontime = '%{Acct-Session-Time}', \
+                        acctinputoctets = '%{%{Acct-Input-Gigawords}:-0}' << 32 | '%{%{Acct-Input-Octets}:-0}', \
+                        acctoutputoctets = '%{%{Acct-Output-Gigawords}:-0}' << 32 | '%{%{Acct-Output-Octets}:-0}' \
+                    WHERE acctuniqueid = '%{md5:%{NAS-IP-Address}-%{Acct-Session-Id}-%{SQL-User-Name}}'"
+            }
+
+            stop {
+                query = "\
+                    UPDATE ${....acct_table2} SET \
+                        acctstoptime = FROM_UNIXTIME(%l), \
+                        acctsessiontime = '%{Acct-Session-Time}', \
+                        acctinputoctets = '%{%{Acct-Input-Gigawords}:-0}' << 32 | '%{%{Acct-Input-Octets}:-0}', \
+                        acctoutputoctets = '%{%{Acct-Output-Gigawords}:-0}' << 32 | '%{%{Acct-Output-Octets}:-0}', \
+                        acctterminatecause = '%{Acct-Terminate-Cause}', \
+                        connectinfo_stop = '%{Connect-Info}' \
+                    WHERE acctuniqueid = '%{md5:%{NAS-IP-Address}-%{Acct-Session-Id}-%{SQL-User-Name}}'"
+            }
+
+            accounting-on {
+                query = ""
+            }
+
+            accounting-off {
+                query = ""
+            }
+        }
+    }
+
+    authcheck_table = "radcheck"
+    authreply_table = "radreply"
+    groupcheck_table = "radgroupcheck"
+    groupreply_table = "radgroupreply"
+    usergroup_table = "radusergroup"
+
+    read_groups = "yes"
+    read_clients = "no"
+    client_table = "nas"
+
+    sql_user_name = "%{User-Name}"
+
+    authorize_check_query = "SELECT id, username, attribute, value, op FROM ${authcheck_table} WHERE username = '%{SQL-User-Name}' ORDER BY id"
+    authorize_reply_query = "SELECT id, username, attribute, value, op FROM ${authreply_table} WHERE username = '%{SQL-User-Name}' ORDER BY id"
+
+    authorize_group_check_query = "SELECT id, groupname, attribute, value, op FROM ${groupcheck_table} WHERE groupname = '%{SQL-Group}' ORDER BY id"
+    authorize_group_reply_query = "SELECT id, groupname, attribute, value, op FROM ${groupreply_table} WHERE groupname = '%{SQL-Group}' ORDER BY id"
+
+    group_membership_query = "SELECT groupname FROM radusergroup WHERE username = '%{SQL-User-Name}' ORDER BY priority"
+
+    pool {
+        start = 5
+        min = 4
+        max = 10
+        spare = 3
+        uses = 0
+        retry_delay = 30
+        lifetime = 0
+        idle_timeout = 60
+    }
+}

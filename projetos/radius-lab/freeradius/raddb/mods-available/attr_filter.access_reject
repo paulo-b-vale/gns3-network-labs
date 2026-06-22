@@ -1,0 +1,4 @@
+attr_filter attr_filter.access_reject {
+    filename = ${modconfdir}/${.:name}/access_reject
+    key = "%{User-Name}"
+}

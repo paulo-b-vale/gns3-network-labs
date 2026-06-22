@@ -1,0 +1,6 @@
+detail {
+    filename = ${radacctdir}/%{Client-Shortname}/detail-%Y%m%d
+    header = "%t"
+    permissions = 0600
+    locking = no
+}

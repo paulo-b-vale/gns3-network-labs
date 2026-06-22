@@ -1,0 +1,5 @@
+# This is the root dictionary. The freeradius/freeradius-server Docker
+# image already ships /usr/share/freeradius/dictionary which pulls in
+# every vendor (including Mikrotik). We just need our local dictionary
+# to chain to it.
+$INCLUDE /usr/share/freeradius/dictionary

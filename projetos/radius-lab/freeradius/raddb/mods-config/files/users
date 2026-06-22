@@ -1,0 +1,20 @@
+# mods-config/files/users
+#
+# Format:
+#   username   Auth-Type/Cleartext-Password check
+#       Reply-Attribute = value,
+#       Reply-Attribute = value
+#
+# Stage 1 goal: prove auth works end-to-end with ONE test user.
+# Stage 3 will add more users with different service plans.
+
+# --- Test customer: basic 10M/5M plan ---
+customer001    Cleartext-Password := "lab1234"
+    Mikrotik-Rate-Limit = "5M/10M",
+    Service-Type = Framed-User,
+    Framed-Protocol = PPP
+
+# --- Built-in DEFAULT entries below are intentionally left out ---
+# We do NOT want a DEFAULT Auth-Type fallback yet — every user should
+# be explicitly defined while we're validating the lab. Add DEFAULT
+# reject-with-log behavior once you're comfortable.

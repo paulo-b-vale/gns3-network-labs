@@ -1,0 +1,5 @@
+files {
+    filename = ${modconfdir}/${.:instance}/users
+    acctusersfile = ${modconfdir}/${.:instance}/acct_users
+    preproxy_usersfile = ${modconfdir}/${.:instance}/preproxy_users
+}

@@ -1,0 +1,44 @@
+server default {
+
+# ---- AUTHENTICATION ----
+authorize {
+    preprocess
+
+    # Look up the user in mods-config/files/users
+    sql
+
+    # MS-CHAPv2 detection (RouterOS defaults to this over PAP)
+    mschap
+
+    # If a Cleartext-Password was found, PAP will handle the comparison
+    pap
+}
+
+authenticate {
+    Auth-Type MS-CHAP {
+        mschap
+    }
+
+    Auth-Type PAP {
+        pap
+    }
+}
+
+# ---- ACCOUNTING ---- (wired up properly in Stage 4, harmless to leave here now)
+preacct {
+    preprocess
+}
+
+accounting {
+    sql
+}
+
+# ---- POST-AUTH ----
+post-auth {
+    # Nothing extra yet — Stage 3/5 will add CoA-related logic here
+    Post-Auth-Type REJECT {
+        attr_filter.access_reject
+    }
+}
+
+}
